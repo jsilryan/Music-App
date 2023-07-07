@@ -1,6 +1,8 @@
-from django.urls import path
-from .views import index
+from django.urls import path, re_path
+from .views import front
 
 urlpatterns = [
-    path('', index) #Users' urls
+    path('', front),
+    path('join', front, name='join'),
+    re_path(r'^.*/$', front)
 ]
