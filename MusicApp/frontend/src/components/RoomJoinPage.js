@@ -8,6 +8,9 @@ export default function RoomJoin() {
         roomCode : "",
         error: ""
     })
+    let hostNum = localStorage.getItem('HostNum')
+    const [newHostNum, setNewHostNum] = React.useState(() => JSON.parse(hostNum) || [])
+
     const navigate = useNavigate() 
 
     function handleChange (event) {
@@ -23,17 +26,33 @@ export default function RoomJoin() {
     }
 
     function clickRoomButton () {
-        const requestOptions = {
-            method : "POST",
-            headers: {"Content-Type": "application/json"},
-            body : JSON.stringify({
-                code : roomData.roomCode
-            })
+        console.log(newHostNum)
+        let requestOptions
+        if (newHostNum) {
+            requestOptions = {
+                method : "POST",
+                headers: {"Content-Type": "application/json"},
+                body : JSON.stringify({
+                    code : roomData.roomCode,
+                    key : newHostNum
+                })
+            }
         }
+        else {
+            requestOptions = {
+                method : "POST",
+                headers: {"Content-Type": "application/json"},
+                body : JSON.stringify({
+                    code : roomData.roomCode
+                })
+            }
+        }
+
         fetch('http://localhost:8000/api/join-room', requestOptions)
             .then((res) => {
                 if (res.ok) {
-                    navigate(`/room/${roomData.roomCode}`)
+                    return res.json()
+                    
                 } else {
                     setRoomData (
                         prevData => {
@@ -44,6 +63,20 @@ export default function RoomJoin() {
                         }
                     )
                 }
+            })
+            .then((data) => {
+                console.log(data);
+                if (data && data.key) { // Check if data and data.key are defined
+                  const stringifiedHostNum = JSON.stringify(data.key);
+                  localStorage.setItem('HostNum', stringifiedHostNum);
+                  const stringifiedCode= JSON.stringify(roomData.roomCode);
+                  localStorage.setItem('Code', stringifiedCode);
+                  console.log(localStorage.getItem("HostNum"))
+                  navigate(`/room/${roomData.roomCode}`);
+                }
+                else {
+                    console.log("Data is undefined or does not have the 'key' property.");
+                  }
             })
             .catch (
                 (error) => {

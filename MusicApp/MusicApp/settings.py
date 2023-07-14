@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
-    'frontend.frontend'
+    'frontend.frontend',
+    'spotify.apps.SpotifyConfig'
 ]
 
 MIDDLEWARE = [

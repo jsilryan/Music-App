@@ -11,21 +11,19 @@ import { Link, useNavigate} from 'react-router-dom'
 import FormControlLabel from '@mui/material/FormControlLabel';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import { Collapse } from "@mui/material"
+import Alert from "@mui/lab/Alert"
 
 
-export default function CreateRoom(props) {
+export default function UpdateRoom(props) {
     const navigate = useNavigate() 
-    const defaultProps = {
-        votesToSkip : 2,
-        guestCanPause : true,
-        update : false,
-        roomCode: null,
-        updateCallback : () => {}
-    }
+
+    let hostNum = localStorage.getItem('HostNum')
+    const [newHostNum, setNewHostNum] = React.useState(() => JSON.parse(hostNum) || [])
+
     //Multiply 1 * 8 pixels; so if 2 then 16 pixels
     const [roomDetails, setRoomDetails] = React.useState({
-        guestCanPause: defaultProps.guestCanPause,
-        votesToSkip: defaultProps.votesToSkip
+        guestCanPause: props.guestCanPause,
+        votesToSkip: props.votesToSkip
     })
 
     const [msg, setMsg] = React.useState({
@@ -35,7 +33,6 @@ export default function CreateRoom(props) {
 
     const title = props.update ? "Update Room" : "Create Room"
 
-    const [hostNum, setHostNum] = React.useState()
     const [toCopy, setToCopy] = React.useState(false)
     const [code, setCode] = React.useState()
 
@@ -58,31 +55,15 @@ export default function CreateRoom(props) {
         setClipboardState(false)
     }
 
-   function handleSubmit(event) {
-        event.preventDefault()
-        const requestOptions = {
-            method : "POST",
-            headers : {'Content-Type' : 'application/json'},
-            body : JSON.stringify ({
-                votes_to_skip: roomDetails.votesToSkip,
-                guest_can_pause: roomDetails.guestCanPause
-            })
-        }
-        fetch ("http://localhost:8000/api/create-room", requestOptions)
-            .then (
-                (response) => response.json()
-            )
-            .then ((data) => {
-                console.log(data)
-                setHostNum(data.host)
-                setCode(data.code)
-                setToCopy(true)
-            })
-   }
+    React.useEffect (
+        () => {
+            console.log(props.roomCode)
+        }, [roomDetails]
+    )
 
    function handleUpdate (event) {
         event.preventDefault()
-        const newRequestOptions = {
+        const requestOptions = {
             method : "PATCH",
             headers : {'Content-Type' : 'application/json'},
             body : JSON.stringify ({
@@ -91,8 +72,7 @@ export default function CreateRoom(props) {
                 code: props.roomCode
             })
         }
-        console.log(newRequestOptions)
-        fetch ("http://localhost:8000/api/update-room", newRequestOptions)
+        fetch (`http://localhost:8000/api/update-room?key=${newHostNum}`, requestOptions)
             .then (
                 (response) => {
                     if (response.ok) {
@@ -121,14 +101,11 @@ export default function CreateRoom(props) {
                     }
                 }
             )
+            
             .then ((data) => {
                 console.log(data)
             })
-   }
-
-   function goToRoom() {
-        setClipboardState(true)
-        navigate(`/room/${code}`)
+            
    }
 
    React.useEffect(
@@ -146,24 +123,54 @@ export default function CreateRoom(props) {
     return (
         <Grid container spacing = {1} alignItems="center" justifyContent="center">
             {/*12 is the max number*/}
-            { 
-            !toCopy ?
             <div>
-                {
-                    props.update &&
-                    <Grid item xs = {12} align = "center">
-                        <Collapse in = {
-                            msg.errorMsg != "" || msg.successMsg != "" 
-                        }>
-                            {msg.successMsg}
-                        </Collapse>
-                    </Grid>
-                }
+                <Grid item xs = {12} align = "center">
+                    <Collapse in = {
+                        msg.errorMsg != "" || msg.successMsg != "" 
+                    }>
+                        {
+                            msg.successMsg != "" ?
+                            (
+                                <Alert severity = "success"
+                                    onClose = {() => {
+                                        setMsg (
+                                            prevData => {
+                                                return {
+                                                    ...prevData,
+                                                    successMsg: ""
+                                                    
+                                                }
+                                            }
+                                        )
+                                    }}
+                                >{msg.successMsg}</Alert>
+                            ) 
+                            :
+                            (
+                                <Alert severity = "error"
+                                    onClose = {() => {
+                                        setMsg (
+                                            prevData => {
+                                                return {
+                                                    ...prevData,
+                                                    errorMsg: ""
+                                                    
+                                                }
+                                            }
+                                        )
+                                    }}
+                                >{msg.errorMsg}</Alert>
+                            ) 
+                        }
+                    </Collapse>
+                </Grid>
+                
                 <Grid item xs = {12} align = "center">
                     <Typography component = "h4" variant = "h4">
                         {title}
                     </Typography>
                 </Grid>
+
                 <Grid item xs = {12} align = "center">
                     <FormControl component = "fieldset">
                         <FormHelperText>
@@ -173,7 +180,7 @@ export default function CreateRoom(props) {
                         </FormHelperText>
                         <RadioGroup 
                             row 
-                            defaultValue="true"
+                            defaultValue={props.guestCanPause}
                             name = "guestCanPause"
                             onChange = {handleChange}
                         >
@@ -200,7 +207,7 @@ export default function CreateRoom(props) {
                             type = 'number'
                             name = 'votesToSkip'
                             onChange = {handleChange}
-                            defaultValue = {defaultProps.votesToSkip}
+                            defaultValue = {props.votesToSkip}
                             inputProps = {{
                                 min: 1,
                                 style: {textAlign: "center"}
@@ -213,33 +220,7 @@ export default function CreateRoom(props) {
                         </FormHelperText>
                     </FormControl>
                 </Grid>
-                
-                {
-                !props.update ? 
-                <div>
-                    <Grid item xs={12} align = "center">
-                        <Button 
-                            color = "primary" 
-                            variant = "contained"
-                            onClick = {handleSubmit}
-                        >
-                            Create a Room
-                        </Button>
-                    </Grid>
-                    <br></br>
-                    <Grid item xs={12} align = "center">
-                        <Link to = '/' >
-                            <Button 
-                                color = "secondary" 
-                                variant = "contained" 
-                                style={{ backgroundColor: '#fc2647' }}
-                            >
-                                Back
-                            </Button>
-                        </Link>
-                    </Grid>
-                </div>
-                :
+  
                 <Button 
                     color = "primary" 
                     variant = "contained"
@@ -247,56 +228,8 @@ export default function CreateRoom(props) {
                 >
                     Update Room
                 </Button>
-                }
+                
             </div>
-            :
-            <div className = 'center'>
-                <Grid item xs = {12} align = "center">
-                    <h2>Copy the key below and use it to enter when joining a room as the host.</h2>
-                    <CopyToClipboard 
-                        text = {hostNum}
-                        onCopy = {goToRoom}
-                    >
-                        <Grid item xs={12} align = "center">
-                            <Button 
-                                color = "primary" 
-                                variant = "contained"
-                            >
-                                {hostNum}
-                            </Button>
-                        </Grid>
-                    </CopyToClipboard>
-                    {clipboardState && (
-                        <span style = {{color : "green"}}>
-                            <br />
-                            Copied
-                        </span>
-                    )}
-                    <h2>Paste it here</h2>
-                    <TextField />
-                </Grid>
-                <br />
-                <Grid item xs={12} align = "center">
-                    <Button 
-                        color = "secondary" 
-                        variant = "contained" 
-                        style={{ backgroundColor: '#fc2647' }}
-                        onClick = {goBack}
-                    >
-                        Back
-                    </Button>
-                </Grid>
-            </div>
-            }
         </Grid>
     )
 }
-
-/* constructor (props) {
-        super(props);
-        this.state = {
-            guestCanPause : true,
-            votesToSkip: this.defaultVotes
-        };
-        this.handleSubmit = this.handleSubmit.bind(this); //Allows me to use this. in when defining the function
-} */
