@@ -33,12 +33,12 @@ export default function Room (props) {
     let spotifyKey = localStorage.getItem("SpotifyKey")
     const [newSpotifyKey, setSpotifyKey] = React.useState(() => JSON.parse(spotifyKey) || [])
 
-    // React.useEffect(
-    //     () => {
-    //         const interval = setInterval(getCurrentSong, 1000)
-    //         return () => clearInterval(interval)
-    //     },[]
-    // )
+    React.useEffect(
+        () => {
+            const interval = setInterval(getCurrentSong, 1000)
+            return () => clearInterval(interval)
+        },[]
+    )
 
     function createAddress () {
         if (roomCode && newHostNum) {
