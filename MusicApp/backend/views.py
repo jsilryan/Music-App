@@ -129,15 +129,22 @@ class UserInRoom(APIView):
         print(key)
         engine = import_module(settings.SESSION_ENGINE)
         request.session = engine.SessionStore(session_key = key)
-        print(request.session.get('room_code'))
-        if code:
-            data = {
-                'code' : code
-            }
+        print(f"Room Code: {request.session.get('room_code')}")
+        new_code = self.request.session.get('room_code')
+        if new_code:
+            room = Room.objects.filter(code = new_code)
+            if room:
+                print(f"New Room Code2.1: {new_code}")
+                data = {
+                    'code' : new_code
+                }
+            else:
+                print(f"New Room Code2.2: {new_code}")
+                data = {
+                    'code' : None
+                }
         else:
-            data = {
-                'code' : self.request.session.get('room_code')
-            }
+            return JsonResponse({}, status= status.HTTP_404_NOT_FOUND)
 
         return JsonResponse(data, status = status.HTTP_200_OK) #Takes a python dictionary and serialize it with a json serializer and sends it to the client side
         

@@ -12,7 +12,6 @@ import { Link } from 'react-router-dom'
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { useNavigate } from "react-router-dom";
 import UpdateRoom from "./UpdateRoom";
-import MusicPlayer from "./MusicPlayer";
 
 export default function Room (props) {
     const [roomDetails, setRoomDetails] = React.useState({
@@ -20,8 +19,7 @@ export default function Room (props) {
         votesToSkip: 2,
         isHost: false,
         showSettings: false,
-        spotifyAuthenticated: false,
-        song: {}
+        spotifyAuthenticated: false
     })
     const navigate = useNavigate() 
     const [settings, setSettings]= React.useState()
@@ -32,13 +30,6 @@ export default function Room (props) {
     const [newHostNum, setNewHostNum] = React.useState(() => JSON.parse(hostNum) || [])
     let spotifyKey = localStorage.getItem("SpotifyKey")
     const [newSpotifyKey, setSpotifyKey] = React.useState(() => JSON.parse(spotifyKey) || [])
-
-    // React.useEffect(
-    //     () => {
-    //         const interval = setInterval(getCurrentSong, 1000)
-    //         return () => clearInterval(interval)
-    //     },[]
-    // )
 
     function createAddress () {
         if (roomCode && newHostNum) {
@@ -86,7 +77,7 @@ export default function Room (props) {
             .then ((data) => {
                 setRoomDetails(
                     prevData => {
-                        return { 
+                        return {
                             ...prevData,
                             spotifyAuthenticated: data.status
                         }
@@ -104,6 +95,24 @@ export default function Room (props) {
                 }
             })
     }
+
+    const [newUpdate, setNewUpdate] = React.useState(false)
+ 
+    function setUpdate() {
+        setNewUpdate(true)
+    }
+    // function removeUpdate(){
+    //     setNewUpdate(false)
+    // }
+
+    // React.useEffect (
+    //     () => {
+    //         getRoomDetails()
+    //         if (newUpdate === true) {
+    //             setNewUpdate(false)
+    //         }
+    //     }, [newUpdate]
+    // )
 
     function leaveButton() {
         let requestOptions
@@ -132,35 +141,6 @@ export default function Room (props) {
             })
     }
 
-    function getCurrentSong() {
-        let url = `http://localhost:8000/spotify/current-song?key=${newSpotifyKey}`
-        fetch(url)
-            .then((res) => {
-                if (!res.ok) {
-                    return {}
-                }
-                else if (res.status === 204) {
-                    return {};
-                }
-                else {
-                    return res.json()
-                }
-            })
-            .then ((data) => {          
-                setRoomDetails (
-                    prevData => {
-                        return {
-                            ...prevData,
-                            song : data
-                        }
-                    }
-                )
-                console.log(data)
-            }
-
-            )
-    }
-
     React.useEffect(
         () => {
             console.log(newHostNum)
@@ -179,7 +159,6 @@ export default function Room (props) {
             if (address)
             {
                 getRoomDetails()
-                getCurrentSong()
                 console.log(roomDetails)
             }
         }, [address]
@@ -204,17 +183,21 @@ export default function Room (props) {
                         Code: {roomCode}
                     </Typography>
                 </Grid>
-            
-                {
-                    roomDetails.song ?
-                    <MusicPlayer song = {roomDetails.song}/> /* {...this.state.song} */
-                    :
-                    <Grid item xs = {12} align = "center">
-                        <Typography variant = "h5" component = "h5">
-                            No Song yet.
-                        </Typography>
-                    </Grid>
-                }
+                <Grid item xs = {12} align = "center">
+                    <Typography variant = "h6" component = "h4">
+                        Votes: {roomCode && roomDetails.votesToSkip}
+                    </Typography>
+                </Grid>
+                <Grid item xs = {12} align = "center">
+                    <Typography variant = "h6" component = "h4">
+                        Guest Can Pause: {roomDetails.guestCanPause.toString()}
+                    </Typography>
+                </Grid>
+                <Grid item xs = {12} align = "center">
+                    <Typography variant = "h6" component = "h4">
+                        Host: {roomDetails && roomDetails.isHost.toString()}
+                    </Typography>
+                </Grid>
                 
                 {
                     roomDetails.isHost && 
